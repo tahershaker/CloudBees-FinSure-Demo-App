@@ -1,0 +1,13 @@
+release:
+  name: Horizon Health Patient Portal Release
+  clinicalSystem: patient-portal
+  riskLevel: low
+components:
+  orders-api:
+    version: orders-api:1.4.0
+    deploy: true
+requiredEvidence:
+  - unit-tests
+  - targeted-regression
+  - compliance-smoke-check
+  - staging-validation

@@ -1,0 +1,13 @@
+jira:
+  project: CP
+  issues:
+    - key: CP-1842
+      type: Story
+      summary: Add order status API endpoint
+      status: Done
+      component: orders-api
+    - key: CP-1851
+      type: Bug
+      summary: Fix retry logic for order status lookup
+      status: Done
+      component: orders-api

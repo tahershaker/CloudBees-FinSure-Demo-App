@@ -1,0 +1,128 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+name: horizon-health-standard-release
+
+# Standardized "golden path" release orchestration for Horizon Health — a STAGED workflow.
+# Deploy stages map to environments and call the reusable deployer, which
+# simulates deploying the component. Non-deploy jobs run mock steps and
+# publish evidence.
+#
+# Setup in CloudBees Unify: the target environments (qa, staging) must exist
+# and be associated with the application. Deploys are simulated (no real cluster).
+
+on:
+  workflow_dispatch:
+    inputs:
+      manifest:
+        type: string
+        default: '{"cloudbees-unify-demo-kit":{"deploy":true,"orders-api":{"deploy":true,"name":"orders-api","version":"1.4.9","url":"docker.io/cloudbeesdemo/orders-api:1.4.9"}}}'
+      clinical_system:
+        type: choice
+        options:
+          - patient-portal
+          - scheduling
+          - research-data
+        default: patient-portal
+
+metadata:
+  stages/v1alpha1:
+    - name: Release Readiness
+      jobs:
+        - platform-golden-path
+    - name: QA
+      jobs:
+        - deploy-qa
+        - automated-validation
+    - name: Staging
+      jobs:
+        - deploy-staging
+    - name: Post-Release
+      jobs:
+        - release-summary
+
+jobs:
+  platform-golden-path:
+    steps:
+      - name: Validate standard workflow usage
+        uses: docker://alpine:3.20
+        shell: sh
+        run: |
+          echo "== Horizon Health standard release path =="
+          echo "Clinical system: ${{ inputs.clinical_system }}"
+          echo "Checking reusable platform-workflow adoption..."
+          echo "Checking required health-data governance controls..."
+          echo "Golden path: VALIDATED"
+      - name: Publish evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Golden-path validation — Horizon Health
+            - Clinical system: ${{ inputs.clinical_system }}
+            - Reusable platform-workflow adoption: confirmed
+            - Health-data governance controls: present
+            - Status: **validated**
+
+  deploy-qa:
+    needs:
+      - platform-golden-path
+    environment: qa
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ${{ job.environment }}
+
+  automated-validation:
+    needs:
+      - deploy-qa
+    steps:
+      - name: Run targeted tests
+        uses: docker://alpine:3.20
+        shell: sh
+        run: |
+          echo "Running targeted regression suite..."
+          echo "Running API contract tests..."
+          echo "Running compliance smoke checks..."
+          echo "Validation: PASSED"
+      - name: Publish evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Automated validation
+            - Targeted regression suite: passed
+            - API contract tests: passed
+            - Compliance smoke checks: passed
+            - Status: **passed**
+
+  deploy-staging:
+    needs:
+      - automated-validation
+    environment: staging
+    uses: ./.cloudbees/workflows/deployer.yaml
+    with:
+      manifest: ${{ inputs.manifest }}
+      environment: ${{ job.environment }}
+
+  release-summary:
+    needs:
+      - deploy-staging
+    steps:
+      - name: Summarize business value
+        uses: docker://alpine:3.20
+        shell: sh
+        run: |
+          echo "Release standardized using a reusable platform workflow pattern"
+          echo "Developer teams keep their preferred tools"
+          echo "Leadership gets consistent release visibility"
+      - name: Publish evidence
+        uses: https://github.com/cloudbees-io/publish-evidence-item@v1
+        with:
+          content: |-
+            ## Release summary — Horizon Health
+            | Stage | Status |
+            | --- | --- |
+            | Golden-path validation | passed |
+            | QA deployment | success |
+            | Automated validation | passed |
+            | Staging deployment | success |
+
+            Standardized release via a reusable platform workflow. Release: **COMPLETE**

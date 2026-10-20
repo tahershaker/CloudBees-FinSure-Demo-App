@@ -1,0 +1,15 @@
+release:
+  name: FinSure Bank Mobile Banking Release
+  changeTicket: CHG-10482
+  releaseWindow: Saturday 22:00-23:00 ET
+  riskLevel: medium
+components:
+  orders-api:
+    version: orders-api:1.4.0
+    deploy: true
+requiredEvidence:
+  - unit-tests
+  - security-scan
+  - change-approval
+  - staging-smoke-test
+  - production-approval
